@@ -123,11 +123,7 @@ function decrypt(buffer, params) {
   var result = new Buffer(0);
 
   for (var i = 0; start < buffer.length; ++i) {
-    var end = start + rs + TAG_LENGTH;
-    if (end === buffer.length) {
-      throw new Error('Truncated payload');
-    }
-    end = Math.min(end, buffer.length);
+    var end = Math.min(start + rs + TAG_LENGTH, buffer.length);
     if (end - start <= TAG_LENGTH) {
       throw new Error('Invalid block: too small at ' + i);
     }
@@ -165,13 +161,13 @@ function encrypt(buffer, params) {
   var rs = determineRecordSize(params);
   var start = 0;
   var result = new Buffer(0);
-
-  for (var i = 0; start <= buffer.length; ++i) {
+  do {
     var end = Math.min(start + rs - 1, buffer.length);
-    var block = encryptRecord(key, i, buffer.slice(start, end));
+    var block = encryptRecord(key, counter++, buffer.slice(start, end));
     result = Buffer.concat([result, block]);
     start += rs - 1;
-  }
+  } while (start < buffer.length);
+
   return result;
 }
 
